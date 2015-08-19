@@ -1,0 +1,5 @@
+APP_CONFIG = "../config/khoj_config.properties"
+APP_LOG_CONFIG = "../config/app_log.conf"
+APP_LOG_DIR = "../logs"
+APP_DATA_DIR = "../data"
+APP_DATA_EXT = ".csv"
