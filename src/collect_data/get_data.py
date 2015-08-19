@@ -1,8 +1,7 @@
 import twitter
 import logging
 import time
-from datetime import datetime
-from util import app_globals
+from util import Helper,app_globals
 
 logger = logging.getLogger()
 
@@ -34,7 +33,9 @@ def connect_twitter(access_details):
  # this one uses geolocation tweets (india only)
  # 
   search = api.GetSearch(term=access_details['hashtags'], geocode='20.593684020,78.962880078,1500km',lang='en', result_type='recent', count=10, max_id='')
-  file_name = "_".join(["tweets",datetime.now().strftime('%Y_%m_%d_%H_%M_%S')])
+ #file_name = "_".join(["tweets",datetime.now().strftime('%Y_%m_%d_%H_%M_%S')])
+
+  file_name = "_".join(["tweets",Helper.Helper.get_current_datetime()])
   file_name = app_globals.APP_DATA_DIR+"/"+file_name+app_globals.APP_DATA_EXT
 
   with open(file_name,"w") as ofile:
