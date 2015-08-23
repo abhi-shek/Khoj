@@ -3,8 +3,9 @@
 import os.path
 
 from util import Helper, app_globals
-from collect_data import get_data,clean_data
+from collect_data import get_data, clean_data
 import sys
+
 
 def housekeeping():
 	# validate config files, abort if missing
@@ -45,20 +46,24 @@ def launch():
 if __name__ == '__main__':
 	import logging
 	import logging.config
+
 	checkpoint()
 	logging.config.fileConfig(app_globals.APP_LOG_CONFIG)
 	logger = logging.getLogger(__name__)
 	housekeeping()
 	app_launch_options = Helper.Helper.get_args(sys.argv[1:])
-	logger.info("Launching the khoj with options %s", ",".join(sys.argv[1:]))
-	if app_launch_options.extract:
-		logger.debug("Extracting data..")
-		launch()
-	if app_launch_options.clean:
-		logger.debug("Cleaning the extracted data..")
-		clean_data.tidy_data()
-	if app_launch_options.machinelearn:
-		logger.warning("Not implemented!!")
+if not any(vars(app_launch_options).values()):
+	print "\n\tThis program requires at least one argument.\n\n\tPlease see help : ./launcher.py -h\n"
+	exit()
+logger.info("Launching the khoj with options %s", ",".join(sys.argv[1:]))
+if app_launch_options.extract:
+	logger.debug("Extracting data..")
+	launch()
+if app_launch_options.clean:
+	logger.debug("Cleaning the extracted data..")
+	clean_data.tidy_data()
+if app_launch_options.machinelearn:
+	logger.warning("Not implemented!!")
 
-	logger.info("Launch done!!")
+logger.info("Launch done!!")
 
