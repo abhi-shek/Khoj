@@ -2,6 +2,7 @@ APP_CONFIG = "../config/khoj_config.properties"
 APP_LOG_CONFIG = "../config/app_log.conf"
 APP_LOG_DIR = "../logs"
 APP_DATA_DIR = "../data"
+APP_TIDY_DATA = "../data/tidy_data"
 APP_DATA_EXT = ".csv"
 APP_MAX_REQUEST = 10 #Twitter max request for OAuth applications, max is 450
 APP_HASHTAGS_REQ_COUNT = 3 #for each hashtag, query these many times

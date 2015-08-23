@@ -3,8 +3,8 @@
 import os.path
 
 from util import Helper, app_globals
-from collect_data import get_data
-
+from collect_data import get_data,clean_data
+import sys
 
 def housekeeping():
 	# validate config files, abort if missing
@@ -14,13 +14,15 @@ def housekeeping():
 		exit()
 
 
-def checkpoint_logging():
+def checkpoint():
 	# check existence of log dir, create if missing
 	# we can take backups of logs in future
 	if not os.path.exists(app_globals.APP_LOG_DIR):
 		os.makedirs(app_globals.APP_LOG_DIR)
 	if not os.path.exists(app_globals.APP_DATA_DIR):
 		os.makedirs(app_globals.APP_DATA_DIR)
+	if not os.path.exists(app_globals.APP_TIDY_DATA):
+		os.makedirs(app_globals.APP_TIDY_DATA)
 	if not os.path.isfile(app_globals.APP_LOG_CONFIG):
 		exit()
 
@@ -34,7 +36,7 @@ def launch():
 		logger.critical("Failed loading the application properties...aborting the launch")
 
 	# iterate sections and get data from there
-	# currently suppporting twitter but others...hell yes
+	# currently supporting twitter but others...hell yes
 
 	for sec in helper.app_config.sections():
 		get_data.connect(sec, dict(helper.app_config.items(sec)))
@@ -43,12 +45,20 @@ def launch():
 if __name__ == '__main__':
 	import logging
 	import logging.config
-
-	checkpoint_logging()
+	checkpoint()
 	logging.config.fileConfig(app_globals.APP_LOG_CONFIG)
 	logger = logging.getLogger(__name__)
-	logger.info("Launching the khoj")
 	housekeeping()
-	launch()
+	app_launch_options = Helper.Helper.get_args(sys.argv[1:])
+	logger.info("Launching the khoj with options %s", ",".join(sys.argv[1:]))
+	if app_launch_options.extract:
+		logger.debug("Extracting data..")
+		launch()
+	if app_launch_options.clean:
+		logger.debug("Cleaning the extracted data..")
+		clean_data.tidy_data()
+	if app_launch_options.machinelearn:
+		logger.warning("Not implemented!!")
+
 	logger.info("Launch done!!")
 

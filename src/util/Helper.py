@@ -3,12 +3,18 @@ import logging
 from datetime import datetime, timedelta
 from itertools import combinations
 from itertools import chain
-from csv import writer
+
+import re
+import argparse
+
 
 logger = logging.getLogger()
 
 
 class Helper(object):
+
+	TWEET_REGEX_PATT = "([http|https]*:\/\/.*[\r\n]*)|( +)|(\n)|(RT[\s]?@[\w]+:[\s]+)|(@(\w)+[\s]+)|([\s]+)"
+
 	def __init__(self, prop_loc):
 		self.app_prop_loc = prop_loc
 		self.app_config = ConfigParser()
@@ -38,6 +44,21 @@ class Helper(object):
 	def get_hashtags_combinations(ilist):
 		# s = list(ilist)
 		return chain.from_iterable(combinations(ilist, r) for r in range(len(ilist) + 1))
+
+	@staticmethod
+	def clean_tweet_text(in_tweet):
+		pat = re.compile(Helper.TWEET_REGEX_PATT)
+		o_string = re.sub(pat, " ",in_tweet).strip()
+		return o_string
+
+	@staticmethod
+	def get_args(arg_list):
+		parser = argparse.ArgumentParser(description='Command line options for the parser')
+		parser.add_argument('-e', '--extract', action='store_true', help='Extracts tweets for hashtags', required=False)
+		parser.add_argument('-c', '--clean', action='store_true',help='basic tweets cleaning', required=False)
+		parser.add_argument('-ml', '--machinelearn', action='store_true',help='apply machine learning on cleaned data', required=False)
+		args = parser.parse_args(arg_list)
+		return args
 
 	def __str__(self):
 		return "Helper Utility"

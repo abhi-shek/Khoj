@@ -1,11 +1,11 @@
 import logging
 import time
-
-import twitter
 import csv
 
+import twitter
 from util import Helper, app_globals
-from time import sleep
+
+
 # from tweepy import Stream
 # from tweepy import OAuthHandler
 
@@ -63,7 +63,6 @@ def connect_twitter(access_details):
 		with open(file_name, "ab") as ofile:
 			w = csv.writer(ofile, delimiter = app_globals.APP_CSV_DELIM, lineterminator='\n')
 			w.writerow(csv_header)
-			#ofile.write("id|tweet_id|hashtags|retweet|truncated|tweet_text|\n|")
 
 		global tweet_stats
 		# create as many empty dictionaries as hashtags combinations
