@@ -6,14 +6,16 @@ from itertools import chain
 
 import re
 import argparse
-
+import os.path
+import glob
+from util import app_globals
 
 logger = logging.getLogger()
 
 
 class Helper(object):
 
-	TWEET_REGEX_PATT = "([http|https]*:\/\/.*[\r\n]*)|( +)|(\n)|(RT[\s]?@[\w]+:[\s]+)|(@(\w)+[\s]+)|([\s]+)"
+	TWEET_REGEX_PATT = "([http|https]*:\/\/.*[\r\n]*)|( +)|([\n\r]+)|(RT[\s]?@[\w]+:[\s]+)|(@(\w)+[\s]+)|([\s]+)"
 
 	def __init__(self, prop_loc):
 		self.app_prop_loc = prop_loc
@@ -34,10 +36,9 @@ class Helper(object):
 		return datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
 
 	@staticmethod
-	def get_date(delta):
+	def get_start_end_date(delta):
 		current_date = datetime.now()
-		if delta > 0:
-			current_date = current_date + timedelta(days=delta)
+		current_date = current_date - timedelta(days=delta)
 		return current_date.strftime('%Y-%m-%d')
 
 	@staticmethod
@@ -56,9 +57,14 @@ class Helper(object):
 		parser = argparse.ArgumentParser(description='Command line options for the parser')
 		parser.add_argument('-e', '--extract', action='store_true', help='Extracts tweets for hashtags', required=False)
 		parser.add_argument('-c', '--clean', action='store_true',help='basic tweets cleaning', required=False)
-		parser.add_argument('-ml', '--machinelearn', action='store_true',help='apply machine learning on cleaned data', required=False)
+		#parser.add_argument('-ml', '--machinelearn', action='store_true',help='apply machine learning', required=False)
 		args = parser.parse_args(arg_list)
 		return args
+
+	@staticmethod
+	def get_latest_file_dir():
+		newest = max(glob.iglob(os.path.join(app_globals.APP_TIDY_DATA , '*.csv')), key=os.path.getctime)
+		return newest
 
 	def __str__(self):
 		return "Helper Utility"

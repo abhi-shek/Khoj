@@ -17,8 +17,6 @@ logger = logging.getLogger(__name__)
 # 4. RT @name:
 # 5. @name
 
-#logger = logging.getLogger()
-
 def tidy_data():
 	cleaned_file = "_".join(["tidy_data", Helper.Helper.get_current_datetime()])
 	cleaned_file = app_globals.APP_TIDY_DATA + "/" + cleaned_file + app_globals.APP_DATA_EXT
@@ -28,13 +26,12 @@ def tidy_data():
 	for dfile in listdir(app_globals.APP_DATA_DIR):
 		if dfile.endswith(app_globals.APP_DATA_EXT):
 			rfile = app_globals.APP_DATA_DIR+"/"+dfile
-			with open(rfile, "rb") as ifile:
+			with open(rfile, "rbU") as ifile:
 				logger.debug("reading file -> %s ", rfile)
 				r = csv.reader(ifile, delimiter="|", lineterminator="\n")
 				for i, line in enumerate(r):
-					line[-1] = Helper.Helper.clean_tweet_text(line[-1])
+					line[-2] = Helper.Helper.clean_tweet_text(line[-2])
 					writer.writerow(line)
-
 	o_file.close()
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import os.path
 
 from util import Helper, app_globals
 from collect_data import get_data, clean_data
+from ml import operation
 import sys
 
 
@@ -52,6 +53,7 @@ if __name__ == '__main__':
 	logger = logging.getLogger(__name__)
 	housekeeping()
 	app_launch_options = Helper.Helper.get_args(sys.argv[1:])
+
 if not any(vars(app_launch_options).values()):
 	print "\n\tThis program requires at least one argument.\n\n\tPlease see help : ./launcher.py -h\n"
 	exit()
@@ -62,8 +64,6 @@ if app_launch_options.extract:
 if app_launch_options.clean:
 	logger.debug("Cleaning the extracted data..")
 	clean_data.tidy_data()
-if app_launch_options.machinelearn:
-	logger.warning("Not implemented!!")
 
 logger.info("Launch done!!")
 
