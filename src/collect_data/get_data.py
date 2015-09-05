@@ -128,10 +128,10 @@ def search_twitter(api, hashtag, file_name, index, start_date, end_date):
 	last_id = -1L
 
 	tweet_count = 0
-	#jsonpickle.set_encoder_options('simplejson', indent=4,sort_keys=True)
+	jsonpickle.set_encoder_options('simplejson', indent=4,sort_keys=True)
 	logger.debug("Downloading max {0} tweets".format(maxTweets))
 	with open(file_name, 'ab') as f:
-		w = csv.writer(f, delimiter='|', lineterminator='\n')
+		w = csv.writer(f, delimiter=app_globals.APP_CSV_DELIM, lineterminator='\n')
 		while tweet_count < maxTweets:
 			try:
 				if (last_id <= 0):
@@ -155,21 +155,40 @@ def search_twitter(api, hashtag, file_name, index, start_date, end_date):
 				for i, tweet in enumerate(new_tweets):
 					# get all hashtags in the tweet
 					hash_tags = [hash['text'].encode('utf-8') for hash in tweet.entities.get('hashtags')]
-					line = [tweet.id_str, tweet.created_at, ",".join(hash_tags), str(tweet.retweet_count), str(tweet.retweeted),
-					        tweet.text.encode('utf-8')]
-					# check for location and fallback for each option
+					#line = [tweet.id_str, tweet.created_at, ",".join(hash_tags), str(tweet.retweet_count), str(tweet.retweeted),
+					#         tweet.text.encode('utf-8')]
+					line = [tweet.id_str, tweet.created_at, ",".join(hash_tags), str(tweet.retweet_count)]
+					# is tweet retweeted?
+					if hasattr(tweet,'retweeted_status'):
+						line.append('True')
+						temp_text = tweet.retweeted_status.text.encode('utf-8')
+					else:
+						line.append('False')
+						temp_text = tweet.text.encode('utf-8')
+
+					# do little bit cleaning of original text here itself
+					# this is done so to check any issues in cleaning here itself
+					# any special cleaning then will be added i.e. continous cleaning
+
+					logger.debug("original text {%s} ", temp_text)
+					temp_text = Helper.Helper.clean_tweet_text(temp_text)
+					logger.debug("cleaned text {%s} ", temp_text)
+					line.append(temp_text)
+
+					# check for tweet location and fallback for each option
 					if tweet.place:
-						line.append('tplace,' + tweet.place.full_name.encode('utf-8'))
+						line.append('tplace,' + Helper.Helper.remove_punctuations(tweet.place.full_name.encode('utf-8')))
 					elif tweet.user.location:
-						line.append('ulocation,' + tweet.user.location.encode('utf-8'))
+						line.append('ulocation,' + Helper.Helper.remove_punctuations(tweet.user.location.encode('utf-8')))
 					elif tweet.user.time_zone:
-						line.append('utz,' + tweet.user.time_zone.encode('utf-8'))
+						line.append('utz,' + Helper.Helper.remove_punctuations(tweet.user.time_zone.encode('utf-8')))
 					else:
 						line.append('NaN')
 					w.writerow(line)
 					line[:] = []
 
-				# print (jsonpickle.encode(tweet._json, unpicklable=False) + '\n')
+					print (jsonpickle.encode(tweet._json, unpicklable=False) + '\n')
+
 				tweet_count += len(new_tweets)
 				logger.debug("Downloaded {0} tweets".format(tweet_count))
 				last_id = new_tweets[-1].id
