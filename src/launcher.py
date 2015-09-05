@@ -4,7 +4,7 @@ import os.path
 
 from util import Helper, app_globals
 from collect_data import get_data, clean_data
-from ml import operation
+#from ml import operation
 import sys
 
 
