@@ -2,12 +2,12 @@ import logging
 import time
 import csv
 
-#import twitter
+# import twitter
 from util import Helper, app_globals
 import tweepy
 import jsonpickle
 
-from sys import  exit
+from sys import exit
 
 # from tweepy import Stream
 # from tweepy import OAuthHandler
@@ -17,6 +17,7 @@ from sys import  exit
 logger = logging.getLogger()
 
 tweet_stats = []
+
 
 def connect(data_from, credentials):
 	if data_from == "twitter":
@@ -50,12 +51,12 @@ def connect_twitter(access_details):
 		# 	consumer_secret=access_details['consumer_secret'],
 		# 	access_token_key=access_details['access_token_key'],
 		# 	access_token_secret=access_details['access_token_secret'],
-     #  debugHTTP=True
+		#  debugHTTP=True
 		# )
 
 		auth = tweepy.AppAuthHandler(consumer_key=access_details['consumer_key'],
 		                             consumer_secret=access_details['consumer_secret'])
-		api = tweepy.API(auth, wait_on_rate_limit=True,wait_on_rate_limit_notify=True)
+		api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
 		if not api:
 			logger.debug("Can't Authenticate")
 			exit(-1)
@@ -70,10 +71,11 @@ def connect_twitter(access_details):
 		file_name = "_".join(["tweets", Helper.Helper.get_current_datetime()])
 		file_name = app_globals.APP_DATA_DIR + "/" + file_name + app_globals.APP_DATA_EXT
 		#csv_header = ["id","tweet_id","hashtags","retweet_count","retweeted","truncated","tweet_text"]
-		csv_header = ["tweet_id","created_at","hashtags","retweet_count","retweeted","tweet_text","location"]
+		csv_header = ["tweet_id", "created_at", "user_id", "user_name", "user_handle",
+		              "hashtags", "retweet_count", "retweeted", "tweet_text", "location"]
 		# write the header to the file
 		with open(file_name, "ab") as ofile:
-			w = csv.writer(ofile, delimiter = app_globals.APP_CSV_DELIM, lineterminator='\n')
+			w = csv.writer(ofile, delimiter=app_globals.APP_CSV_DELIM, lineterminator='\n')
 			w.writerow(csv_header)
 
 		global tweet_stats
@@ -95,7 +97,7 @@ def get_hashtags_data(api, hash_tags, ofile):
 		#search_before_date = Helper.Helper.get_date(days_count)
 		startSince = Helper.Helper.get_start_end_date(days_count)
 		endUntil = Helper.Helper.get_start_end_date(days_count - 1)
-		logger.debug("Search start date [%s], end date [%s] ", startSince,endUntil)
+		logger.debug("Search start date [%s], end date [%s] ", startSince, endUntil)
 		# iterate over each hashtags combinations
 		for i, val in enumerate(hash_tags):
 			if (0 == len(val)):
@@ -107,7 +109,7 @@ def get_hashtags_data(api, hash_tags, ofile):
 				# time the operation of each individual/paired hashtags search
 				cpu_start_time, operation_start_time = time.clock(), time.time()
 				#search_twitter(api, search_term, ofile, i, search_before_date)
-				tweet_count = search_twitter(api, search_term, ofile, i, startSince,endUntil)
+				tweet_count = search_twitter(api, search_term, ofile, i, startSince, endUntil)
 				tweet_stats[i]['total_tweet_count'] += tweet_count
 			# (CPU + Operation) time taken in seconds (getting + writing data to file)
 			# includes wait time as well
@@ -128,7 +130,7 @@ def search_twitter(api, hashtag, file_name, index, start_date, end_date):
 	last_id = -1L
 
 	tweet_count = 0
-	jsonpickle.set_encoder_options('simplejson', indent=4,sort_keys=True)
+	jsonpickle.set_encoder_options('simplejson', indent=4, sort_keys=True)
 	logger.debug("Downloading max {0} tweets".format(maxTweets))
 	with open(file_name, 'ab') as f:
 		w = csv.writer(f, delimiter=app_globals.APP_CSV_DELIM, lineterminator='\n')
@@ -155,39 +157,57 @@ def search_twitter(api, hashtag, file_name, index, start_date, end_date):
 				for i, tweet in enumerate(new_tweets):
 					# get all hashtags in the tweet
 					hash_tags = [hash['text'].encode('utf-8') for hash in tweet.entities.get('hashtags')]
-					#line = [tweet.id_str, tweet.created_at, ",".join(hash_tags), str(tweet.retweet_count), str(tweet.retweeted),
-					#         tweet.text.encode('utf-8')]
-					line = [tweet.id_str, tweet.created_at, ",".join(hash_tags), str(tweet.retweet_count)]
-					# is tweet retweeted?
-					if hasattr(tweet,'retweeted_status'):
+					# row to be appended
+					line = [tweet.id_str, tweet.created_at, tweet.user.id_str, str(tweet.user.name.encode('utf-8')),
+					        str(tweet.user.screen_name.encode('utf-8')), ",".join(hash_tags), str(tweet.retweet_count)]
+					# dic to store all kinds of tweet texts
+					tweets_text = {}
+					tweets_list = []
+					# we need to retrieve all relevant tweet texts for analysing
+					if hasattr(tweet, 'quoted_status'):
+						tweets_text['quoted_status'] = tweet.quoted_status['text'].encode('utf-8')
+						tweets_list.append(tweet.quoted_status['text'].encode('utf-8'))
+					else:
+						tweets_text['quoted_status'] = ''
+
+					if hasattr(tweet, 'retweeted_status'):
 						line.append('True')
-						temp_text = tweet.retweeted_status.text.encode('utf-8')
+						tweet_text = tweet.retweeted_status.text.encode('utf-8')
+						tweets_list.append(tweet.retweeted_status.text.encode('utf-8'))
+						tweets_text['retweeted_status'] = tweet_text
+						tweets_text['text'] = tweet.text.encode('utf-8')
 					else:
 						line.append('False')
-						temp_text = tweet.text.encode('utf-8')
+						tweet_text =  tweet.text.encode('utf-8')
+						tweets_list.append(tweet.text.encode('utf-8'))
+						tweets_text['retweeted_status'] = ''
+						tweets_text['text'] = tweet_text
+
+					#logger.debug(jsonpickle.encode(tweets_text, unpicklable=False).encode('utf-8') + '\n')
 
 					# do little bit cleaning of original text here itself
 					# this is done so to check any issues in cleaning here itself
-					# any special cleaning then will be added i.e. continous cleaning
-
-					logger.debug("original text {%s} ", temp_text)
-					temp_text = Helper.Helper.clean_tweet_text(temp_text)
-					logger.debug("cleaned text {%s} ", temp_text)
-					line.append(temp_text)
+					# any special cleaning then will be added i.e. continuous cleaning
+					tweet_text = ' '.join(tweets_list)
+					#logger.debug("original text {%s} ", tweet_text)
+					tweet_text = Helper.Helper.clean_tweet_text(tweet_text)
+					#logger.debug("cleaned text {%s} ", tweet_text)
+					line.append(tweet_text)
 
 					# check for tweet location and fallback for each option
 					if tweet.place:
-						line.append('tplace,' + Helper.Helper.remove_punctuations(tweet.place.full_name.encode('utf-8')))
+						line.append('tplace,' + tweet.place.full_name.encode('utf-8'))
 					elif tweet.user.location:
 						line.append('ulocation,' + Helper.Helper.remove_punctuations(tweet.user.location.encode('utf-8')))
 					elif tweet.user.time_zone:
-						line.append('utz,' + Helper.Helper.remove_punctuations(tweet.user.time_zone.encode('utf-8')))
+						line.append('utz,' + tweet.user.time_zone.encode('utf-8'))
 					else:
 						line.append('NaN')
 					w.writerow(line)
 					line[:] = []
 
-					print (jsonpickle.encode(tweet._json, unpicklable=False) + '\n')
+					# log all text retrieved
+					#print (jsonpickle.encode(tweet._json, unpicklable=False) + '\n')
 
 				tweet_count += len(new_tweets)
 				logger.debug("Downloaded {0} tweets".format(tweet_count))
@@ -196,7 +216,6 @@ def search_twitter(api, hashtag, file_name, index, start_date, end_date):
 				logger.error("Error : " + str(e))
 				break
 	return tweet_count
-
 
 
 # def search_twitter(api, hashtag, file_name, index, search_before_date):

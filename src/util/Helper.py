@@ -14,14 +14,13 @@ logger = logging.getLogger()
 
 
 class Helper(object):
-	# TWEET_REGEX_PATT = "([http|https]*:\/\/.*[\r\n]*)|( +)|([\n\r]+)|(RT[\s]?@[\w]+:[\s]+)|(@(\w)+[\s]+)|([\s]+)"
-	TWEET_REGEX_PATT = '([http|https]*:\/\/.*[\r\n]*)|' \
-	                   '( +)|' \
-	                   '( \n)|' \
-	                   '(RT[\s]?@[\w]+:[\s]+)|' \
-	                   '(@(\w)+[\s]*)|' \
-	                   '([\s]+)|' \
-	                   'RT*[\s]+'
+	# TWEET_REGEX_PATT = '([http|https]*:\/\/.*[\r\n]*)|' \
+	#                    '( +)|' \
+	#                    '( \n)|' \
+	#                    '(RT[\s]?@[\w]+:[\s]+)|' \
+	#                    '(@(\w)+[\s]*)|' \
+	#                    '([\s]+)|' \
+	#                    '(RT)*[\s]+'
 
 	def __init__(self, prop_loc):
 		self.app_prop_loc = prop_loc
@@ -54,16 +53,37 @@ class Helper(object):
 
 	@staticmethod
 	def clean_tweet_text(in_tweet):
-		pat = re.compile(Helper.TWEET_REGEX_PATT, flags=re.IGNORECASE)
-		o_string = re.sub(pat, ' ', in_tweet).strip()
+
+		# Convert to lower case
+		o_string = in_tweet.lower()
+
+		#Convert www.* or https?://* to URL
+		o_string = re.sub('((www\.[^\s]+)|(https?://[^\s]+))', ' ', o_string)
+
+		#remove @username
+		o_string = re.sub('@[^\s]+', ' ', o_string)
+
+		#Replace #word with word
+		o_string = re.sub(r'#([^\s]+)', r'\1', o_string)
+
+		#Remove RT
+		o_string = re.sub('^rt[\s]+', ' ', o_string)
+
 		o_string = o_string.replace('^M', '')
+
 		# few smart people use @ instead at
 		o_string = o_string.replace('@', 'at')
+
 		# remove html tags
 		o_string = Helper.remove_html_tags(o_string)
+
 		# remove all punctuations
 		o_string = Helper.remove_punctuations(o_string)
-		return o_string
+
+		#Remove additional white spaces
+		o_string = re.sub('[\s]+', ' ', o_string)
+
+		return o_string.strip(' \t\n\r')
 
 	@staticmethod
 	def remove_html_tags(text):
@@ -78,7 +98,7 @@ class Helper(object):
 
 	@staticmethod
 	def remove_punctuations(text):
-		o_string = re.sub(r"['_,!\-\"\\\/}{?\.;]", '', text).strip()
+		o_string = re.sub(r"['|:_,!\-\"\\\/}{?\.;]", ' ', text).strip()
 		return o_string
 
 	@staticmethod
